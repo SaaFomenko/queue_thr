@@ -5,11 +5,14 @@
 
 
 using namespace std::chrono_literals;
-static const int max_count = 7;
-static int count = 0;
+//static const int max_count = 7;
+//static int count = 0;
 
 namespace my
 {
+    const int max_count = 7;
+    int count = 0;
+
     void client()
     {
         for (int i = 0; i < max_count; ++i)
