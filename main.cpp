@@ -1,6 +1,8 @@
 #include <iostream>
 #include <thread>
 #include <chrono>
+#include <atomic>
+#include <mutex>
 #include "lib/colormod.h"
 
 
@@ -10,16 +12,29 @@ using namespace std::chrono_literals;
 
 namespace my
 {
+    std::mutex m;
     const int max_count = 7;
-    int count = 0;
+    std::atomic<int> count(0);
+    //int count = 0;
 
     void client()
     {
         for (int i = 0; i < max_count; ++i)
         {
+            m.lock();
+
             Color::Modifier red(Color::FG_RED);
-            std::this_thread::sleep_for(1s);
-            std::cout << red << "Client took a queue with a number: " << ++count << '\n'; 
+            count.store(count.load() + 1, std::memory_order_seq_cst);
+            //count.store(count.load() + 1, std::memory_order_relaxed);
+            //count.store(count.load() + 1, std::memory_order_acq_rel);
+            //count.store(count.load() + 1, std::memory_order_acquire);
+            //count.store(count.load() + 1, std::memory_order_consume);
+            //count.store(count.load() + 1, std::memory_order_release);
+            //std::cout << red << "Client took a queue with a number: " << ++count << '\n'; 
+            std::cout << red << "Client took a queue with a number: " << count << '\n'; 
+            //std::this_thread::sleep_for(1s);
+
+            m.unlock();
         }
     }
 
@@ -27,9 +42,20 @@ namespace my
     {
         for (int i = 0; i < max_count; ++i)
         {
+            m.lock();
+
             Color::Modifier green(Color::FG_GREEN);
-            std::this_thread::sleep_for(2s);
-            std::cout << green << "Manager solved the issue with number: " << count-- << '\n'; 
+            //std::cout << green << "Manager solved the issue with number: " << count-- << '\n'; 
+            std::cout << green << "Manager solved the issue with number: " << count << '\n'; 
+            count.store(count.load() - 1, std::memory_order_seq_cst);
+            //count.store(count.load() - 1, std::memory_order_relaxed);
+            //count.store(count.load() - 1, std::memory_order_acq_rel);
+            //count.store(count.load() - 1, std::memory_order_acquire);
+            //count.store(count.load() - 1, std::memory_order_consume);
+            //count.store(count.load() - 1, std::memory_order_release);
+            //std::this_thread::sleep_for(2s);
+
+            m.unlock();
         }
     }
    
@@ -39,6 +65,10 @@ int main()
 {
 
     //std::cout << "CPU cores: " << std::thread::hardware_concurrency() << '\n';
+    //std::cout << "CPU supports atomic objects: ";
+    //std::cout << std::boolalpha << my::count.is_lock_free() << "\n\n";
+
+    auto start = std::chrono::steady_clock::now();
 
     std::thread client_thr(my::client);
     std::thread manager_thr(my::manager);
@@ -47,6 +77,12 @@ int main()
         client_thr.join();
     if (manager_thr.joinable())
         manager_thr.join();
+
+    auto end = std::chrono::steady_clock::now();
+    std::chrono::duration<double> elapsed_seconds = end - start;
+    
+    Color::Modifier def(Color::FG_DEFAULT);
+    std::cout << def << "\nElapsed seconds: " << elapsed_seconds.count() << '\n';
 
     return 0;
 }
