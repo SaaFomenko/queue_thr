@@ -70,9 +70,11 @@ int main()
 
     auto start = std::chrono::steady_clock::now();
 
-    std::thread client_thr(my::client);
-    std::thread manager_thr(my::manager);
-
+    for (int i = 0; i < my::max_count; ++i)
+    {
+        std::thread client_thr(my::client);
+        std::thread manager_thr(my::manager);
+    }
     if (client_thr.joinable())
         client_thr.join();
     if (manager_thr.joinable())
