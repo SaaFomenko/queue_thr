@@ -14,7 +14,8 @@ namespace my
 {
     std::mutex m;
     const int max_count = 7;
-    std::atomic<int> count(0);
+    std::atomic<int> count{0};
+    //std::atomic<bool> isClient{false};
     //int count = 0;
 
     void client()
@@ -30,7 +31,8 @@ namespace my
             //count.store(count.load() + 1, std::memory_order_acquire);
             //count.store(count.load() + 1, std::memory_order_consume);
             //count.store(count.load() + 1, std::memory_order_release);
-            //std::cout << red << "Client took a queue with a number: " << ++count << '\n'; 
+            //std::cout << red << "Client took a queue with a number: " << ++count << '\n';
+            //isClient.store(true); 
             std::cout << red << "Client took a queue with a number: " << count << '\n'; 
             //std::this_thread::sleep_for(1s);
 
@@ -40,23 +42,34 @@ namespace my
 
     void manager()
     {
-        for (int i = 0; i < max_count; ++i)
+        while (count.load() != 0)
         {
             m.lock();
-
             Color::Modifier green(Color::FG_GREEN);
-            //std::cout << green << "Manager solved the issue with number: " << count-- << '\n'; 
+           // std::cout << green << "Manager solved the issue with number: " << count-- << '\n'; 
+         //   isClient.store(false); 
             std::cout << green << "Manager solved the issue with number: " << count << '\n'; 
             count.store(count.load() - 1, std::memory_order_seq_cst);
             //count.store(count.load() - 1, std::memory_order_relaxed);
-            //count.store(count.load() - 1, std::memory_order_acq_rel);
-            //count.store(count.load() - 1, std::memory_order_acquire);
-            //count.store(count.load() - 1, std::memory_order_consume);
-            //count.store(count.load() - 1, std::memory_order_release);
-            //std::this_thread::sleep_for(2s);
-
             m.unlock();
         }
+        // for (int i = 0; i < max_count; ++i)
+        // {
+
+        //     if (count.load() > 0)
+        //     {
+        //         Color::Modifier green(Color::FG_GREEN);
+        //         std::cout << green << "Manager solved the issue with number: " << count << '\n'; 
+        //         count.store(count.load() - 1, std::memory_order_relaxed);
+        //     }
+        //     //std::cout << green << "Manager solved the issue with number: " << count-- << '\n'; 
+        //     //count.store(count.load() - 1, std::memory_order_acq_rel);
+        //     //count.store(count.load() - 1, std::memory_order_acquire);
+        //     //count.store(count.load() - 1, std::memory_order_consume);
+        //     //count.store(count.load() - 1, std::memory_order_release);
+        //     //std::this_thread::sleep_for(2s);
+
+        // }
     }
    
 } // namespace my
