@@ -2,7 +2,8 @@
 #include <thread>
 #include <chrono>
 #include <atomic>
-#include <mutex>
+//#include <condition_variable>
+//#include <mutex>
 #include "lib/colormod.h"
 
 
@@ -12,50 +13,65 @@ using namespace std::chrono_literals;
 
 namespace my
 {
-    std::mutex m;
+    //std::mutex m;
     const int max_count = 7;
+    //std::condition_variable isClient;
+    std::atomic isClient{false};
     std::atomic<int> count(0);
     //int count = 0;
 
     void client()
     {
+        isClient.store(true);
         for (int i = 0; i < max_count; ++i)
         {
-            m.lock();
+            //m.lock();
 
             Color::Modifier red(Color::FG_RED);
-            count.store(count.load() + 1, std::memory_order_seq_cst);
-            //count.store(count.load() + 1, std::memory_order_relaxed);
+            //count.store(count.load() + 1, std::memory_order_seq_cst);
+            //isClient.notify_all();
+            count.store(count.load() + 1, std::memory_order_relaxed);
             //count.store(count.load() + 1, std::memory_order_acq_rel);
             //count.store(count.load() + 1, std::memory_order_acquire);
             //count.store(count.load() + 1, std::memory_order_consume);
             //count.store(count.load() + 1, std::memory_order_release);
             //std::cout << red << "Client took a queue with a number: " << ++count << '\n'; 
             std::cout << red << "Client took a queue with a number: " << count << '\n'; 
-            //std::this_thread::sleep_for(1s);
+            //std::this_thread::sleep_for(1ms);
 
-            m.unlock();
+            //m.unlock();
         }
+        isClient.store(false);
     }
 
     void manager()
     {
-        for (int i = 0; i < max_count; ++i)
+        //while(isClient.load())
+        while(true)
         {
-            m.lock();
-
-            Color::Modifier green(Color::FG_GREEN);
+            if (count.load() != 0)
+            {
+                Color::Modifier green(Color::FG_GREEN);
+                std::cout << green << "Manager solved the issue with number: " << count << '\n'; 
+                count.store(count.load() - 1, std::memory_order_relaxed);
+            }
+            else
+            {
+                if (!isClient.load()) break;
+            }
+            // else
+            // {
+            //     std::this_thread::sleep_for(1ms);
+            // }
             //std::cout << green << "Manager solved the issue with number: " << count-- << '\n'; 
-            std::cout << green << "Manager solved the issue with number: " << count << '\n'; 
-            count.store(count.load() - 1, std::memory_order_seq_cst);
+            //count.store(count.load() - 1, std::memory_order_seq_cst);
             //count.store(count.load() - 1, std::memory_order_relaxed);
             //count.store(count.load() - 1, std::memory_order_acq_rel);
             //count.store(count.load() - 1, std::memory_order_acquire);
             //count.store(count.load() - 1, std::memory_order_consume);
             //count.store(count.load() - 1, std::memory_order_release);
-            //std::this_thread::sleep_for(2s);
 
-            m.unlock();
+            //m.unlock();
         }
     }
    
