@@ -16,13 +16,13 @@ namespace my
     //std::mutex m;
     const int max_count = 7;
     //std::condition_variable isClient;
-    std::atomic isClient{false};
+    //std::atomic isClient{false};
     std::atomic<int> count(0);
     //int count = 0;
 
     void client()
     {
-        isClient.store(true);
+        //isClient.store(true);
         for (int i = 0; i < max_count; ++i)
         {
             //m.lock();
@@ -30,7 +30,7 @@ namespace my
             Color::Modifier red(Color::FG_RED);
             //count.store(count.load() + 1, std::memory_order_seq_cst);
             //isClient.notify_all();
-            count.store(count.load() + 1, std::memory_order_relaxed);
+            count.store(count.load(std::memory_order_relaxed) + 1, std::memory_order_relaxed);
             //count.store(count.load() + 1, std::memory_order_acq_rel);
             //count.store(count.load() + 1, std::memory_order_acquire);
             //count.store(count.load() + 1, std::memory_order_consume);
@@ -41,24 +41,26 @@ namespace my
 
             //m.unlock();
         }
-        isClient.store(false);
+        //isClient.store(false);
     }
 
     void manager()
     {
         //while(isClient.load())
-        while(true)
+        int i = 0;
+        while(i < max_count)
         {
-            if (count.load() != 0)
+            if (count.load(std::memory_order_relaxed) != 0)
             {
                 Color::Modifier green(Color::FG_GREEN);
                 std::cout << green << "Manager solved the issue with number: " << count << '\n'; 
-                count.store(count.load() - 1, std::memory_order_relaxed);
+                count.store(count.load(std::memory_order_relaxed) - 1, std::memory_order_relaxed);
+                ++i;
             }
-            else
-            {
-                if (!isClient.load()) break;
-            }
+            // else
+            // {
+            //     if (!isClient.load()) break;
+            // }
             // else
             // {
             //     std::this_thread::sleep_for(1ms);
